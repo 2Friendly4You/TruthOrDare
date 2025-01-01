@@ -249,16 +249,16 @@
         const taskPlayerInfo = document.getElementById('taskPlayerInfo');
 
         const allTasks = {
-            "truths": [
+            truths: Array.from([
                 "Test truth 1",
                 "Test truth 2",
                 "Test truth 3"
-            ],
-            "dares": [
+            ]),
+            dares: Array.from([
                 "Test dare 1",
                 "Test dare 2",
                 "Test dare 3"
-            ]
+            ])
         };
 
         function escapeHtml(unsafe) {

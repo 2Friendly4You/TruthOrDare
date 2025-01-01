@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Truth or Dare Party</title>
+    <style>
+        :root {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --text-primary: #e2e8f0;
+            --accent-color: #4fd1c5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #4a5568 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-primary);
+            perspective: 1000px;
+            overflow: hidden;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) rotateX(-20deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) rotateX(0);
+            }
+        }
+
+        @keyframes taskReveal {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .game-container {
+            background: rgba(45, 55, 72, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.7s ease-out;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 2px solid var(--bg-secondary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .btn:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 10px 20px rgba(79, 209, 196, 0.3);
+        }
+
+        #playerList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .player-chip {
+            background: var(--bg-secondary);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .player-chip .remove {
+            cursor: pointer;
+            color: #f56565;
+            font-weight: bold;
+        }
+
+        #gameArea {
+            display: none;
+            text-align: center;
+        }
+
+        .task-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            animation: taskReveal 0.5s ease-out;
+            text-align: center;
+            word-wrap: break-word;
+            line-height: 1.6;
+            color: var(--text-primary);
+            /* Added to ensure text is visible */
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .current-player {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+        .player-turn-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div id="playerSetup" class="section">
+            <h1 style="margin-bottom: 20px;">Truth or Dare Party</h1>
+            <div class="player-input-container">
+                <input type="text" id="playerNameInput" placeholder="Enter Player Name">
+                <button onclick="addPlayer()" class="btn">Add Player</button>
+            </div>
+            <div id="playerList"></div>
+            <button onclick="startGame()" class="btn" id="startGameBtn" style="display:none;">Start Game</button>
+        </div>
+
+        <div id="gameArea">
+            <div class="player-turn-info">
+                <div id="currentPlayerInfo" class="current-player"></div>
+                <div id="nextPlayerInfo"></div>
+            </div>
+            <div class="task-display" id="taskDisplay">
+                <div id="taskText">Choose Truth or Dare</div>
+                <div id="taskPlayerInfo" style="font-size: 0.8rem; margin-top: 10px; color: var(--accent-color);"></div>
+            </div>
+            <div class="action-buttons">
+                <button onclick="selectTruth()" class="btn">Truth</button>
+                <button onclick="selectDare()" class="btn">Dare</button>
+            </div>
+            <button onclick="resetGame()" class="btn" style="margin-top: 15px;">End Game</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentPlayerIndex = 0;
+        let usedTruths = [];
+        let usedDares = [];
+
+        const playerNameInput = document.getElementById('playerNameInput');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const playerList = document.getElementById('playerList');
+        const playerSetup = document.getElementById('playerSetup');
+        const gameArea = document.getElementById('gameArea');
+        const currentPlayerInfo = document.getElementById('currentPlayerInfo');
+        const nextPlayerInfo = document.getElementById('nextPlayerInfo');
+        const taskText = document.getElementById('taskText');
+        const taskPlayerInfo = document.getElementById('taskPlayerInfo');
+
+        const allTasks = {
+            "truths": [
+                "Test truth 1",
+                "Test truth 2",
+                "Test truth 3"
+            ],
+            "dares": [
+                "Test dare 1",
+                "Test dare 2",
+                "Test dare 3"
+            ]
+        };
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function addPlayer() {
+            const playerName = playerNameInput.value.trim();
+
+            if (playerName && !players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {
+                players.push({ name: playerName });
+                updatePlayerList();
+                playerNameInput.value = '';
+            } else {
+                alert('Please enter a unique player name');
+            }
+
+            startGameBtn.style.display = players.length >= 2 ? 'inline-block' : 'none';
+        }
+
+        function updatePlayerList() {
+            playerList.innerHTML = players.map((player, index) => `
+        <div class="player-chip">
+            ${escapeHtml(player.name)}
+            <span class="remove" onclick="removePlayer(${index})">×</span>
+        </div>
+    `).join('');
+        }
+
+        function removePlayer(index) {
+            players.splice(index, 1);
+            updatePlayerList();
+            startGameBtn.style.display = players.length >= 2 ? 'inline-block' : 'none';
+        }
+
+        function startGame() {
+            if (players.length < 2) {
+                alert('Please add at least 2 players');
+                return;
+            }
+
+            currentPlayerIndex = 0;
+            usedTruths = [];
+            usedDares = [];
+
+            playerSetup.style.display = 'none';
+            gameArea.style.display = 'block';
+
+            updateCurrentPlayer();
+        }
+
+        function updateCurrentPlayer() {
+            const currentPlayer = players[currentPlayerIndex];
+            const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            const nextPlayer = players[nextPlayerIndex];
+
+            currentPlayerInfo.textContent = `${escapeHtml(currentPlayer.name)}'s Turn`;
+            nextPlayerInfo.textContent = `Next: ${escapeHtml(nextPlayer.name)}`;
+        }
+
+        function selectTruth() {
+            if (usedTruths.length === allTasks.truths.length) {
+                usedTruths = [];
+            }
+
+            const availableTruths = allTasks.truths.filter(truth => !usedTruths.includes(truth));
+            if (availableTruths.length === 0) {
+                alert('No more unique truths available!');
+                return;
+            }
+
+            const randomTruth = availableTruths[Math.floor(Math.random() * availableTruths.length)];
+            usedTruths.push(randomTruth);
+
+            // Safely set innerHTML with escaped content
+            taskText.innerHTML = `<strong>Truth:</strong> ${escapeHtml(randomTruth)}`;
+            taskPlayerInfo.textContent = `Task for ${escapeHtml(players[currentPlayerIndex].name)}`;
+
+            nextPlayer();
+        }
+
+        function selectDare() {
+            if (usedDares.length === allTasks.dares.length) {
+                usedDares = [];
+            }
+
+            const availableDares = allTasks.dares.filter(dare => !usedDares.includes(dare));
+            if (availableDares.length === 0) {
+                alert('No more unique dares available!');
+                return;
+            }
+
+            const randomDare = availableDares[Math.floor(Math.random() * availableDares.length)];
+            usedDares.push(randomDare);
+
+            // Safely set innerHTML with escaped content
+            taskText.innerHTML = `<strong>Dare:</strong> ${escapeHtml(randomDare)}`;
+            taskPlayerInfo.textContent = `Task for ${escapeHtml(players[currentPlayerIndex].name)}`;
+
+            nextPlayer();
+        }
+
+        function nextPlayer() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            updateCurrentPlayer();
+        }
+
+        function resetGame() {
+            playerSetup.style.display = 'block';
+            gameArea.style.display = 'none';
+
+            players = [];
+            updatePlayerList();
+            startGameBtn.style.display = 'none';
+            playerNameInput.value = '';
+
+            taskText.textContent = 'Choose Truth or Dare';
+            taskPlayerInfo.textContent = '';
+        }
+    </script>
+</body>
+
+</html>

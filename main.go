@@ -7,17 +7,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
-// Item represents a simple data structure
-type Item struct {
-	ID    int     `json:"id"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
+type Question struct {
+	ID       int      `json:"id"`
+	Language string   `json:"language"`
+	Type     string   `json:"type"`
+	Task     string   `json:"task"`
+	Tags     []string `json:"tags"`
 }
 
 var db *sql.DB
@@ -56,37 +58,49 @@ func initializeDatabase() {
 	log.Println("Connected to the database.")
 }
 
-func getAllItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, name, price FROM items")
+func getQuestions(w http.ResponseWriter, r *http.Request) {
+	language := r.URL.Query().Get("language")
+	qType := r.URL.Query().Get("type")
+
+	query := `
+		SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags
+		FROM questions q
+		LEFT JOIN question_tags qt ON q.id = qt.question_id
+		LEFT JOIN tags t ON qt.tag_id = t.id
+		WHERE (? = '' OR q.language = ?)
+		AND (? = '' OR q.type = ?)
+		GROUP BY q.id`
+
+	rows, err := db.Query(query, language, language, qType, qType)
 	if err != nil {
-		log.Printf("Failed to fetch items: %v", err)
-		http.Error(w, "Failed to fetch items", http.StatusInternalServerError)
+		log.Printf("Failed to fetch questions: %v", err)
+		http.Error(w, "Failed to fetch questions", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var items []Item
+	var questions []Question
 	for rows.Next() {
-		var item Item
-		err := rows.Scan(&item.ID, &item.Name, &item.Price)
+		var q Question
+		var tags sql.NullString
+		err := rows.Scan(&q.ID, &q.Language, &q.Type, &q.Task, &tags)
 		if err != nil {
-			log.Printf("Failed to parse item: %v", err)
-			http.Error(w, "Failed to parse items", http.StatusInternalServerError)
+			log.Printf("Failed to parse question: %v", err)
+			http.Error(w, "Failed to parse questions", http.StatusInternalServerError)
 			return
 		}
-		items = append(items, item)
-	}
-
-	if err = rows.Err(); err != nil {
-		log.Printf("Error iterating rows: %v", err)
-		http.Error(w, "Error iterating rows", http.StatusInternalServerError)
-		return
+		if tags.Valid {
+			q.Tags = strings.Split(tags.String, ",")
+		} else {
+			q.Tags = []string{}
+		}
+		questions = append(questions, q)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(items); err != nil {
-		log.Printf("Failed to encode items to JSON: %v", err)
-		http.Error(w, "Failed to encode items to JSON", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(questions); err != nil {
+		log.Printf("Failed to encode questions to JSON: %v", err)
+		http.Error(w, "Failed to encode questions to JSON", http.StatusInternalServerError)
 	}
 }
 
@@ -94,9 +108,9 @@ func main() {
 	initializeDatabase()
 	defer db.Close()
 
-	http.HandleFunc("/api/items", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/questions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			getAllItems(w, r)
+			getQuestions(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

@@ -1,17 +1,19 @@
-CREATE DATABASE IF NOT EXISTS truth_or_dare_db;
+CREATE DATABASE IF NOT EXISTS truth_or_dare_db
+CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 USE truth_or_dare_db;
 
 CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    language VARCHAR(50) NOT NULL,
+    language VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     type ENUM('truth', 'dare') NOT NULL,
-    task TEXT NOT NULL
+    task TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tags (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
+    name VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS question_tags (

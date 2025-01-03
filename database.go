@@ -39,7 +39,7 @@ type QueryConfig struct {
 //   - (*Database, nil) on successful connection
 //   - (nil, error) if connection fails after 10 attempts
 func NewDatabase() (*Database, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		os.Getenv("MYSQL_USER"),
 		os.Getenv("MYSQL_PASSWORD"),
 		os.Getenv("MYSQL_HOST"),

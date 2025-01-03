@@ -81,7 +81,7 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(questions); err != nil {
 		log.Printf("Failed to encode questions to JSON: %v", err)
 		http.Error(w, "Failed to encode questions to JSON", http.StatusInternalServerError)

@@ -1,102 +1,107 @@
+// Package main provides a REST API server for managing truth or dare questions.
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
-// Item represents a simple data structure
-type Item struct {
-	ID    int     `json:"id"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
+// Question represents a truth or dare question with its associated metadata.
+type Question struct {
+	// ID is the unique identifier for the question
+	ID int `json:"id"`
+
+	// Language is the ISO language code (e.g., "en", "de")
+	Language string `json:"language"`
+
+	// Type must be either "truth" or "dare"
+	Type string `json:"type"`
+
+	// Task contains the actual question or dare text
+	Task string `json:"task"`
+
+	// Tags is an array of associated tag names
+	Tags []string `json:"tags"`
 }
 
-var db *sql.DB
+var db *Database
 
+// initializeDatabase loads environment variables and establishes
+// the database connection. Exits the program if initialization fails.
 func initializeDatabase() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		os.Getenv("MYSQL_USER"),
-		os.Getenv("MYSQL_PASSWORD"),
-		os.Getenv("MYSQL_HOST"),
-		os.Getenv("MYSQL_PORT"),
-		os.Getenv("MYSQL_DATABASE"),
-	)
-
 	var dbErr error
-	for i := 0; i < 10; i++ {
-		db, dbErr = sql.Open("mysql", dsn)
-		if dbErr == nil {
-			dbErr = db.Ping()
-			if dbErr == nil {
-				break
-			}
-		}
-		log.Printf("Failed to connect to database (attempt %d/10): %v", i+1, dbErr)
-		time.Sleep(5 * time.Second)
-	}
-
+	db, dbErr = NewDatabase()
 	if dbErr != nil {
-		log.Fatalf("Failed to connect to database after 10 attempts: %v", dbErr)
+		log.Fatal(dbErr)
 	}
 
 	log.Println("Connected to the database.")
 }
 
-func getAllItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, name, price FROM items")
+// getQuestions handles GET requests to /api/questions endpoint.
+//
+// Supported query parameters:
+//   - language: Filter by language code (optional)
+//   - type: Filter by "truth" or "dare" (optional)
+//   - tags: Multiple tag filters (optional)
+//   - matchAllTags: "true" to match all tags, "false" to match any (optional)
+//
+// Examples:
+//
+//	GET /api/questions?language=en
+//	GET /api/questions?type=dare&tags=18+&tags=alcohol&matchAllTags=true
+//
+// Response:
+//
+//	200 OK: JSON array of Question objects
+//	500 Internal Server Error: If database query fails
+func getQuestions(w http.ResponseWriter, r *http.Request) {
+	language := r.URL.Query().Get("language")
+	qType := r.URL.Query().Get("type")
+	tags := r.URL.Query()["tags"]
+	matchAllTags := r.URL.Query().Get("matchAllTags") == "true"
+
+	config := &QueryConfig{
+		MatchAllTags: matchAllTags,
+	}
+
+	questions, err := db.GetQuestions(language, qType, tags, config)
 	if err != nil {
-		log.Printf("Failed to fetch items: %v", err)
-		http.Error(w, "Failed to fetch items", http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	var items []Item
-	for rows.Next() {
-		var item Item
-		err := rows.Scan(&item.ID, &item.Name, &item.Price)
-		if err != nil {
-			log.Printf("Failed to parse item: %v", err)
-			http.Error(w, "Failed to parse items", http.StatusInternalServerError)
-			return
-		}
-		items = append(items, item)
-	}
-
-	if err = rows.Err(); err != nil {
-		log.Printf("Error iterating rows: %v", err)
-		http.Error(w, "Error iterating rows", http.StatusInternalServerError)
+		log.Printf("Failed to fetch questions: %v", err)
+		http.Error(w, "Failed to fetch questions", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(items); err != nil {
-		log.Printf("Failed to encode items to JSON: %v", err)
-		http.Error(w, "Failed to encode items to JSON", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(questions); err != nil {
+		log.Printf("Failed to encode questions to JSON: %v", err)
+		http.Error(w, "Failed to encode questions to JSON", http.StatusInternalServerError)
 	}
 }
 
+// main initializes and starts the HTTP server.
+// The server provides the following endpoints:
+//   - GET /api/questions: Retrieve questions with optional filters
+//
+// Required environment variables:
+//   - APP_PORT: Port number for the HTTP server
+//   - All database-related environment variables (see NewDatabase docs)
 func main() {
 	initializeDatabase()
 	defer db.Close()
 
-	http.HandleFunc("/api/items", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/questions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			getAllItems(w, r)
+			getQuestions(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

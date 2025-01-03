@@ -1,14 +1,35 @@
-CREATE DATABASE IF NOT EXISTS itemsdb;
+CREATE DATABASE IF NOT EXISTS truth_or_dare_db;
 
-USE itemsdb;
+USE truth_or_dare_db;
 
-CREATE TABLE IF NOT EXISTS items (
+CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL
+    language VARCHAR(50) NOT NULL,
+    type ENUM('truth', 'dare') NOT NULL,
+    task TEXT NOT NULL
 );
 
-INSERT INTO items (name, price) VALUES
-    ('Item 1', 10.50),
-    ('Item 2', 15.75),
-    ('Item 3', 7.30);
+CREATE TABLE IF NOT EXISTS tags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS question_tags (
+    question_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id),
+    PRIMARY KEY (question_id, tag_id)
+);
+
+INSERT INTO questions (language, type, task) VALUES
+    ('en', 'truth', 'Have you ever lied to your best friend?'),
+    ('en', 'dare', 'Take a shot of vodka.'),
+    ('de', 'truth', 'Hast du jemals Essen gestohlen?'),
+    ('de', 'dare', 'Tanze für 1 Minute ohne Musik.');
+
+INSERT INTO tags (name) VALUES
+    ('18+'), ('alcohol'), ('food');
+
+INSERT INTO question_tags (question_id, tag_id) VALUES
+    (1, 1), (2, 2), (2, 1), (3, 3), (4, 1);

@@ -29,6 +29,11 @@ This is a simple truth or dare game that can be played by a group of people.
     docker-compose up --build
     ```
 
+If you want to delete the database and start fresh, you can use the following command:
+```sh
+docker-compose down -v
+```
+
 ## Usage
 1. Open your web browser and navigate to [http://localhost](http://_vscodecontentref_/2).
 2. Add players and start the game.

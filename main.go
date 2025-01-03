@@ -60,6 +60,12 @@ func initializeDatabase() {
 //	GET /api/questions?language=en
 //	GET /api/questions?type=dare&tags=18+&tags=alcohol&matchAllTags=true
 //
+// With curl:
+//
+//	curl -X GET "http://localhost:<port>/api/questions?language=en&type=truth&tags=18%2B&tags=alcohol&matchAllTags=true"
+//	curl -X GET "http://localhost:<port>/api/questions?language=de&type=dare&tags=18%2B&tags=food"
+//	curl -X GET "http://localhost:<port>/api/questions?language=en"
+//
 // Response:
 //
 //	200 OK: JSON array of Question objects

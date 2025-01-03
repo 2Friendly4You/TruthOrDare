@@ -98,10 +98,10 @@ func (d *Database) Close() error {
 //   - (nil, error) if the query fails
 func (d *Database) GetQuestions(language, qType string, tags []string, config *QueryConfig) ([]Question, error) {
 	baseQuery := `
-		SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags
-		FROM questions q
-		LEFT JOIN question_tags qt ON q.id = qt.question_id
-		LEFT JOIN tags t ON qt.tag_id = t.id`
+        SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags
+        FROM questions q
+        LEFT JOIN question_tags qt ON q.id = qt.question_id
+        LEFT JOIN tags t ON qt.tag_id = t.id`
 
 	whereConditions := []string{}
 	args := []interface{}{}
@@ -120,14 +120,14 @@ func (d *Database) GetQuestions(language, qType string, tags []string, config *Q
 		if config != nil && config.MatchAllTags {
 			// Match all tags using COUNT and HAVING
 			baseQuery += fmt.Sprintf(`
-				INNER JOIN (
-					SELECT qt.question_id
-					FROM question_tags qt
-					INNER JOIN tags t ON qt.tag_id = t.id
-					WHERE t.name IN (?%s)
-					GROUP BY qt.question_id
-					HAVING COUNT(DISTINCT t.name) = ?
-				) matching_tags ON q.id = matching_tags.question_id`,
+                INNER JOIN (
+                    SELECT qt.question_id
+                    FROM question_tags qt
+                    INNER JOIN tags t ON qt.tag_id = t.id
+                    WHERE t.name IN (?%s)
+                    GROUP BY qt.question_id
+                    HAVING COUNT(DISTINCT t.name) = ?
+                ) matching_tags ON q.id = matching_tags.question_id`,
 				strings.Repeat(",?", len(tags)-1))
 
 			for _, tag := range tags {

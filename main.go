@@ -1,100 +1,84 @@
+// Package main provides a REST API server for managing truth or dare questions.
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
+// Question represents a truth or dare question with its associated metadata.
 type Question struct {
-	ID       int      `json:"id"`
-	Language string   `json:"language"`
-	Type     string   `json:"type"`
-	Task     string   `json:"task"`
-	Tags     []string `json:"tags"`
+	// ID is the unique identifier for the question
+	ID int `json:"id"`
+
+	// Language is the ISO language code (e.g., "en", "de")
+	Language string `json:"language"`
+
+	// Type must be either "truth" or "dare"
+	Type string `json:"type"`
+
+	// Task contains the actual question or dare text
+	Task string `json:"task"`
+
+	// Tags is an array of associated tag names
+	Tags []string `json:"tags"`
 }
 
-var db *sql.DB
+var db *Database
 
+// initializeDatabase loads environment variables and establishes
+// the database connection. Exits the program if initialization fails.
 func initializeDatabase() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		os.Getenv("MYSQL_USER"),
-		os.Getenv("MYSQL_PASSWORD"),
-		os.Getenv("MYSQL_HOST"),
-		os.Getenv("MYSQL_PORT"),
-		os.Getenv("MYSQL_DATABASE"),
-	)
-
 	var dbErr error
-	for i := 0; i < 10; i++ {
-		db, dbErr = sql.Open("mysql", dsn)
-		if dbErr == nil {
-			dbErr = db.Ping()
-			if dbErr == nil {
-				break
-			}
-		}
-		log.Printf("Failed to connect to database (attempt %d/10): %v", i+1, dbErr)
-		time.Sleep(5 * time.Second)
-	}
-
+	db, dbErr = NewDatabase()
 	if dbErr != nil {
-		log.Fatalf("Failed to connect to database after 10 attempts: %v", dbErr)
+		log.Fatal(dbErr)
 	}
 
 	log.Println("Connected to the database.")
 }
 
+// getQuestions handles GET requests to /api/questions endpoint.
+//
+// Supported query parameters:
+//   - language: Filter by language code (optional)
+//   - type: Filter by "truth" or "dare" (optional)
+//   - tags: Multiple tag filters (optional)
+//   - matchAllTags: "true" to match all tags, "false" to match any (optional)
+//
+// Examples:
+//
+//	GET /api/questions?language=en
+//	GET /api/questions?type=dare&tags=18+&tags=alcohol&matchAllTags=true
+//
+// Response:
+//
+//	200 OK: JSON array of Question objects
+//	500 Internal Server Error: If database query fails
 func getQuestions(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
 	qType := r.URL.Query().Get("type")
+	tags := r.URL.Query()["tags"]
+	matchAllTags := r.URL.Query().Get("matchAllTags") == "true"
 
-	query := `
-		SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags
-		FROM questions q
-		LEFT JOIN question_tags qt ON q.id = qt.question_id
-		LEFT JOIN tags t ON qt.tag_id = t.id
-		WHERE (? = '' OR q.language = ?)
-		AND (? = '' OR q.type = ?)
-		GROUP BY q.id`
+	config := &QueryConfig{
+		MatchAllTags: matchAllTags,
+	}
 
-	rows, err := db.Query(query, language, language, qType, qType)
+	questions, err := db.GetQuestions(language, qType, tags, config)
 	if err != nil {
 		log.Printf("Failed to fetch questions: %v", err)
 		http.Error(w, "Failed to fetch questions", http.StatusInternalServerError)
 		return
-	}
-	defer rows.Close()
-
-	var questions []Question
-	for rows.Next() {
-		var q Question
-		var tags sql.NullString
-		err := rows.Scan(&q.ID, &q.Language, &q.Type, &q.Task, &tags)
-		if err != nil {
-			log.Printf("Failed to parse question: %v", err)
-			http.Error(w, "Failed to parse questions", http.StatusInternalServerError)
-			return
-		}
-		if tags.Valid {
-			q.Tags = strings.Split(tags.String, ",")
-		} else {
-			q.Tags = []string{}
-		}
-		questions = append(questions, q)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -104,6 +88,13 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// main initializes and starts the HTTP server.
+// The server provides the following endpoints:
+//   - GET /api/questions: Retrieve questions with optional filters
+//
+// Required environment variables:
+//   - APP_PORT: Port number for the HTTP server
+//   - All database-related environment variables (see NewDatabase docs)
 func main() {
 	initializeDatabase()
 	defer db.Close()

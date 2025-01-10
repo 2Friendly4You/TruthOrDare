@@ -2,9 +2,13 @@
 //
 // @title Truth or Dare API
 // @version 1.0
-// @description A REST API for managing truth or dare questions in a MySQL database
+// @description A comprehensive REST API for managing and retrieving truth or dare questions. Supports filtering by language, type, and tags.
 // @host localhost:8080
 // @BasePath /api
+// @schemes http
+// @contact.name API Support
+// @contact.url https://github.com/2Friendly4You/TruthOrDare
+// @license.name MIT
 package main
 
 import (
@@ -18,21 +22,39 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-// Question represents a truth or dare question with its associated metadata.
+// ErrorResponse represents a standard error response
+// @Description Standard error response format
+type ErrorResponse struct {
+	// Error message describing what went wrong
+	Message string `json:"message"`
+	// Optional error code for client handling
+	Code string `json:"code,omitempty"`
+}
+
+// Question represents a truth or dare question with its associated metadata
+// @Description A truth or dare question entry with metadata
 type Question struct {
-	// ID is the unique identifier for the question
+	// Unique identifier for the question
+	// @example 1
 	ID int `json:"id"`
 
-	// Language is the ISO language code (e.g., "en", "de")
+	// ISO language code of the question
+	// @example "en"
+	// @pattern ^[a-z]{2}$
 	Language string `json:"language"`
 
-	// Type must be either "truth" or "dare"
+	// Question type, either "truth" or "dare"
+	// @example "truth"
+	// @enum "truth" "dare"
 	Type string `json:"type"`
 
-	// Task contains the actual question or dare text
+	// The actual question or dare text
+	// @example "What was your most embarrassing moment?"
+	// @minLength 3
 	Task string `json:"task"`
 
-	// Tags is an array of associated tag names
+	// Array of associated tag names
+	// @example ["funny","social","party"]
 	Tags []string `json:"tags"`
 }
 
@@ -55,17 +77,18 @@ func initializeDatabase() {
 	log.Println("Connected to the database.")
 }
 
-// @Summary Get questions
-// @Description Retrieve questions with optional filters
+// @Summary Retrieve questions
+// @Description Get a list of truth or dare questions with optional filtering capabilities
 // @Tags questions
 // @Accept json
 // @Produce json
-// @Param language query string false "Filter by ISO language code (e.g., en, de)"
-// @Param type query string false "Filter by question type (truth/dare)"
-// @Param tags query []string false "Filter by multiple tags"
-// @Param matchAllTags query boolean false "If true, all specified tags must match"
-// @Success 200 {array} Question
-// @Failure 500 {object} map[string]string
+// @Param language query string false "ISO 639-1 language code filter (2 characters)" example(en)
+// @Param type query string false "Question type filter" Enums(truth, dare)
+// @Param tags query []string false "Filter questions by tags (comma-separated)" example(funny,party,social)
+// @Param matchAllTags query boolean false "Require all specified tags to match (true) or any tag (false)" default(false)
+// @Success 200 {array} Question "List of matching questions"
+// @Failure 400 {object} ErrorResponse "Invalid request parameters"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /questions [get]
 func getQuestions(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
@@ -92,13 +115,14 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Get all tags
-// @Description Retrieve all available tags
+// @Summary Get available tags
+// @Description Retrieve a list of all available tags that can be used for question filtering
 // @Tags tags
 // @Accept json
 // @Produce json
-// @Success 200 {array} string
-// @Failure 500 {object} map[string]string
+// @Success 200 {array} string "List of available tags"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Example 200 {array} string ["funny", "social", "party", "deep", "romantic"]
 // @Router /tags [get]
 func getTags(w http.ResponseWriter, r *http.Request) {
 	tags, err := db.GetTags()

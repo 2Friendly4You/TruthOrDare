@@ -11,33 +11,29 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Database represents a connection to the MySQL database and provides
-// methods for querying and manipulating truth or dare questions.
+// Database represents a connection to the MySQL database
+// @Description Database connection handler for truth or dare questions
 type Database struct {
 	db *sql.DB
 }
 
-// QueryConfig contains configuration options for database queries.
+// QueryConfig contains configuration options for database queries
+// @Description Configuration options for filtering questions
 type QueryConfig struct {
-	// MatchAllTags determines whether all specified tags must match (true)
-	// or if matching any tag is sufficient (false)
+	// Determines if all tags must match (true) or any tag matches (false)
+	// @example false
 	MatchAllTags bool
 }
 
 // NewDatabase creates a new database connection using environment variables
-// and returns a Database instance. It attempts to connect up to 10 times
-// with a 5-second delay between attempts.
-//
-// Required environment variables:
-//   - MYSQL_USER: Database username
-//   - MYSQL_PASSWORD: Database password
-//   - MYSQL_HOST: Database host address
-//   - MYSQL_PORT: Database port
-//   - MYSQL_DATABASE: Database name
-//
-// Returns:
-//   - (*Database, nil) on successful connection
-//   - (nil, error) if connection fails after 10 attempts
+// @Description Establishes database connection with retry mechanism
+// @Return (*Database) Database connection instance
+// @Return (error) Connection error if all attempts fail
+// @x-envVars MYSQL_USER - Database username
+// @x-envVars MYSQL_PASSWORD - Database password
+// @x-envVars MYSQL_HOST - Database host address
+// @x-envVars MYSQL_PORT - Database port number
+// @x-envVars MYSQL_DATABASE - Database name
 func NewDatabase() (*Database, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		os.Getenv("MYSQL_USER"),
@@ -68,34 +64,21 @@ func NewDatabase() (*Database, error) {
 	return &Database{db: db}, nil
 }
 
-// Close closes the database connection.
-// It should be deferred after creating a new Database instance.
-func (d *Database) Close() error {
-	return d.db.Close()
-}
-
-// GetQuestions retrieves questions from the database based on specified filters.
-//
-// Parameters:
-//   - language: Filter by language code (e.g., "en", "de"). Empty string matches all languages
-//   - qType: Filter by question type ("truth" or "dare"). Empty string matches all types
-//   - tags: Array of tag names to filter by. Empty array matches all tags
-//   - config: Query configuration options. If nil, defaults to matching any tag
-//
-// Examples:
+// GetQuestions retrieves filtered questions from the database
+// @Description Fetches questions based on language, type, and tags
+// @Param language string ISO language code filter (e.g., "en", "de")
+// @Param qType string Question type filter ("truth" or "dare")
+// @Param tags []string Tag names to filter by
+// @Param config *QueryConfig Query configuration options
+// @Return []Question List of matching questions
+// @Return error Query execution error
+// @Example
 //
 //	// Get all English questions
-//	db.GetQuestions("en", "", nil, nil)
+//	questions, err := db.GetQuestions("en", "", nil, nil)
 //
-//	// Get German truth questions with either "18+" or "food" tags
-//	db.GetQuestions("de", "truth", []string{"18+", "food"}, &QueryConfig{MatchAllTags: false})
-//
-//	// Get questions that have both "18+" AND "alcohol" tags
-//	db.GetQuestions("", "", []string{"18+", "alcohol"}, &QueryConfig{MatchAllTags: true})
-//
-// Returns:
-//   - ([]Question, nil) on success
-//   - (nil, error) if the query fails
+//	// Get German truth questions with specific tags
+//	questions, err := db.GetQuestions("de", "truth", []string{"funny"}, &QueryConfig{MatchAllTags: true})
 func (d *Database) GetQuestions(language, qType string, tags []string, config *QueryConfig) ([]Question, error) {
 	baseQuery := `
         SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags
@@ -174,11 +157,14 @@ func (d *Database) GetQuestions(language, qType string, tags []string, config *Q
 	return questions, nil
 }
 
-// GetTags returns all available tags in the database.
+// GetTags returns all available question tags
+// @Description Retrieves complete list of available tags from database
+// @Return []string List of tag names
+// @Return error Query execution error
+// @Example
 //
-// Returns:
-//   - ([]string, nil) containing all tag names on success
-//   - (nil, error) if the query fails
+//	tags, err := db.GetTags()
+//	// Returns: ["funny", "social", "party", "deep", "romantic"]
 func (d *Database) GetTags() ([]string, error) {
 	rows, err := d.db.Query("SELECT name FROM tags")
 	if err != nil {
@@ -199,18 +185,11 @@ func (d *Database) GetTags() ([]string, error) {
 	return tags, nil
 }
 
-// AddQuestion adds a new question to the database along with its tags.
-// If any of the specified tags don't exist, they will be created automatically.
-// The operation is performed in a transaction to ensure data consistency.
-//
-// Parameters:
-//   - q: Question struct containing:
-//   - Language: Language code (required)
-//   - Type: "truth" or "dare" (required)
-//   - Task: The actual question/dare text (required)
-//   - Tags: Array of tag names (optional)
-//
-// Example:
+// AddQuestion inserts a new question with associated tags
+// @Description Creates a new question and its tag associations in a transaction
+// @Param q Question Question object containing all required fields
+// @Return error Operation error if transaction fails
+// @Example
 //
 //	err := db.AddQuestion(Question{
 //	    Language: "en",
@@ -218,10 +197,6 @@ func (d *Database) GetTags() ([]string, error) {
 //	    Task:    "What's your biggest fear?",
 //	    Tags:    []string{"deep", "emotional"},
 //	})
-//
-// Returns:
-//   - nil on success
-//   - error if the operation fails (transaction will be rolled back)
 func (d *Database) AddQuestion(q Question) error {
 	tx, err := d.db.Begin()
 	if err != nil {
@@ -269,4 +244,11 @@ func (d *Database) AddQuestion(q Question) error {
 	}
 
 	return tx.Commit()
+}
+
+// Close terminates the database connection
+// @Description Safely closes the database connection and frees resources
+// @Return error Connection closure error
+func (d *Database) Close() error {
+	return d.db.Close()
 }

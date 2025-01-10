@@ -22,6 +22,9 @@ jobs:
     - name: Install godoc
       run: go install golang.org/x/tools/cmd/godoc@latest
 
+    - name: Create docs directory
+      run: mkdir -p docs
+
     - name: Generate documentation
       run: godoc -html ./ > docs/index.html
 

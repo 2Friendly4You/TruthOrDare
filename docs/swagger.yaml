@@ -1,29 +1,57 @@
 basePath: /api
 definitions:
+  main.ErrorResponse:
+    description: Standard error response format
+    properties:
+      code:
+        description: Optional error code for client handling
+        type: string
+      message:
+        description: Error message describing what went wrong
+        type: string
+    type: object
   main.Question:
+    description: A truth or dare question entry with metadata
     properties:
       id:
-        description: ID is the unique identifier for the question
+        description: |-
+          Unique identifier for the question
+          @example 1
         type: integer
       language:
-        description: Language is the ISO language code (e.g., "en", "de")
+        description: |-
+          ISO language code of the question
+          @example "en"
+          @pattern ^[a-z]{2}$
         type: string
       tags:
-        description: Tags is an array of associated tag names
+        description: |-
+          Array of associated tag names
+          @example ["funny","social","party"]
         items:
           type: string
         type: array
       task:
-        description: Task contains the actual question or dare text
+        description: |-
+          The actual question or dare text
+          @example "What was your most embarrassing moment?"
+          @minLength 3
         type: string
       type:
-        description: Type must be either "truth" or "dare"
+        description: |-
+          Question type, either "truth" or "dare"
+          @example "truth"
+          @enum "truth" "dare"
         type: string
     type: object
 host: localhost:8080
 info:
-  contact: {}
-  description: A REST API for managing truth or dare questions in a MySQL database
+  contact:
+    name: API Support
+    url: https://github.com/2Friendly4You/TruthOrDare
+  description: A truth or dare question entry with metadata
+  license:
+    name: MIT
   title: Truth or Dare API
   version: "1.0"
 paths:
@@ -31,24 +59,30 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve questions with optional filters
+      description: Get a list of truth or dare questions with optional filtering capabilities
       parameters:
-      - description: Filter by ISO language code (e.g., en, de)
+      - description: ISO 639-1 language code filter (2 characters)
+        example: en
         in: query
         name: language
         type: string
-      - description: Filter by question type (truth/dare)
+      - description: Question type filter
+        enum:
+        - truth
+        - dare
         in: query
         name: type
         type: string
       - collectionFormat: csv
-        description: Filter by multiple tags
+        description: Filter questions by tags (comma-separated)
+        example: funny,party,social
         in: query
         items:
           type: string
         name: tags
         type: array
-      - description: If true, all specified tags must match
+      - default: false
+        description: Require all specified tags to match (true) or any tag (false)
         in: query
         name: matchAllTags
         type: boolean
@@ -56,41 +90,70 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of matching questions
           schema:
             items:
               $ref: '#/definitions/main.Question'
             type: array
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Invalid request parameters
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get questions
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Retrieve questions
       tags:
       - questions
+    post:
+      consumes:
+      - application/json
+      description: Creates a new question and its tag associations in a transaction
+      parameters:
+      - description: Question object to be created
+        in: body
+        name: q
+        required: true
+        schema:
+          $ref: '#/definitions/main.Question'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created question
+          schema:
+            $ref: '#/definitions/main.Question'
+        "400":
+          description: Invalid question data
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Database error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
   /tags:
     get:
       consumes:
       - application/json
-      description: Retrieve all available tags
+      description: Retrieve a list of all available tags that can be used for question
+        filtering
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of available tags
           schema:
             items:
               type: string
             type: array
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get all tags
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Get available tags
       tags:
       - tags
+schemes:
+- http
 swagger: "2.0"

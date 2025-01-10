@@ -1,0 +1,143 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A REST API for managing truth or dare questions in a MySQL database",
+        "title": "Truth or Dare API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/questions": {
+            "get": {
+                "description": "Retrieve questions with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questions"
+                ],
+                "summary": "Get questions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by ISO language code (e.g., en, de)",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by question type (truth/dare)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by multiple tags",
+                        "name": "tags",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, all specified tags must match",
+                        "name": "matchAllTags",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Question"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "description": "Retrieve all available tags",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Get all tags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.Question": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "ID is the unique identifier for the question",
+                    "type": "integer"
+                },
+                "language": {
+                    "description": "Language is the ISO language code (e.g., \"en\", \"de\")",
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "Tags is an array of associated tag names",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "task": {
+                    "description": "Task contains the actual question or dare text",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type must be either \"truth\" or \"dare\"",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

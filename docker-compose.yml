@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.mysql
-    container_name: mysql-container
+    container_name: truth-or-dare-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -24,7 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: go-api
+    container_name: truth-or-dare-api
     env_file:
       - .env
     depends_on:
@@ -37,7 +37,7 @@ services:
 
   nginx:
     image: nginx:latest
-    container_name: nginx-server
+    container_name: truth-or-dare-nginx
     ports:
       - "80:80"
     volumes:

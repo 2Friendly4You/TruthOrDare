@@ -1,4 +1,4 @@
-// Package main provides a REST API server for managing truth or dare questions.
+// Package main provides a REST API server for managing truth or dare questions. The server uses a MySQL database to store questions and tags.
 //
 // @title Truth or Dare API
 // @version 1.0

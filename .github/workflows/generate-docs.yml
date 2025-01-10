@@ -26,12 +26,12 @@ jobs:
       run: mkdir -p doc
 
     - name: Generate documentation
-      run: gomarkdoc -o doc
+      run: gomarkdoc -o doc/readme.md
 
     - name: Commit and push documentation
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git add README.md
+        git add doc/
         git commit -m "Update Go documentation [skip ci]" || echo "No changes to commit"
         git push

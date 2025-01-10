@@ -26,7 +26,7 @@ jobs:
       run: mkdir -p doc
 
     - name: Generate documentation
-      run: gomarkdoc -dir . -o doc
+      run: gomarkdoc -o doc
 
     - name: Commit and push documentation
       run: |

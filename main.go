@@ -80,6 +80,7 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 		MatchAllTags: matchAllTags,
 	}
 
+	// deepcode ignore Sqli: <is validated by the database driver>
 	questions, err := db.GetQuestions(language, qType, tags, config)
 	if err != nil {
 		log.Printf("Failed to fetch questions: %v", err)

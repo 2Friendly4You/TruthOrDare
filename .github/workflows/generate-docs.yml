@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   generate-docs:
     runs-on: ubuntu-latest
@@ -25,13 +29,22 @@ jobs:
     - name: Create doc directory
       run: mkdir -p doc
 
+    - name: Create documentation branch
+      run: |
+        branch_name="docs/update-$(date +%Y%m%d-%H%M%S)"
+        git checkout -b $branch_name
+
     - name: Generate documentation
       run: gomarkdoc -o doc/readme.md
 
-    - name: Commit and push documentation
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-        git add doc/
-        git commit -m "Update Go documentation [skip ci]" || echo "No changes to commit"
-        git push
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        title: 'docs: Update Go documentation'
+        body: 'Auto-generated documentation update'
+        branch: ${{ github.ref_name }}
+        base: main
+        delete-branch: true
+        labels: documentation
+        committer: GitHub Actions <actions@github.com>
+        author: GitHub Actions <actions@github.com>

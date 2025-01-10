@@ -30,9 +30,7 @@ jobs:
       run: mkdir -p doc
 
     - name: Create documentation branch
-      run: |
-        branch_name="docs/update-$(date +%Y%m%d-%H%M%S)"
-        git checkout -b $branch_name
+      run: git checkout -b ${{ env.BRANCH_NAME }}
 
     - name: Generate documentation
       run: gomarkdoc -o doc/readme.md
@@ -42,7 +40,7 @@ jobs:
       with:
         title: 'docs: Update Go documentation'
         body: 'Auto-generated documentation update'
-        branch: ${{ github.ref_name }}
+        branch: ${{ env.BRANCH_NAME }}
         base: main
         delete-branch: true
         labels: documentation

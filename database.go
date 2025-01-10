@@ -74,19 +74,14 @@ func NewDatabase() (*Database, error) {
 
 // GetQuestions retrieves filtered questions from the database
 // @Description Fetches questions based on language, type, and tags
-// @Param language string false "ISO language code filter (e.g., 'en', 'de')"
-// @Param qType string false "Question type filter ('truth' or 'dare')"
-// @Param tags []string false "Tag names to filter by"
-// @Param config QueryConfig false "Query configuration options"
-// @Return []Question List of matching questions
-// @Return error Query execution error
-// @Example
-//
-//	// Get all English questions
-//	questions, err := db.GetQuestions("en", "", nil, nil)
-//
-//	// Get German truth questions with specific tags
-//	questions, err := db.GetQuestions("de", "truth", []string{"funny"}, &QueryConfig{MatchAllTags: true})
+// @Param language query string false "ISO language code filter (e.g., 'en', 'de')"
+// @Param qType query string false "Question type filter ('truth' or 'dare')"
+// @Param tags query []string false "Tag names to filter by"
+// @Param config query QueryConfig false "Query configuration options"
+// @Success 200 {array} Question
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /questions [get]
 func (d *Database) GetQuestions(language, qType string, tags []string, config *QueryConfig) ([]Question, error) {
 	baseQuery := `
         SELECT DISTINCT q.id, q.language, q.type, q.task, GROUP_CONCAT(t.name) as tags

@@ -1,4 +1,10 @@
-// Package main provides a REST API server for managing truth or dare questions. The server connects to a mysql database.
+// Package main provides a REST API server for managing truth or dare questions.
+//
+// @title Truth or Dare API
+// @version 1.0
+// @description A REST API for managing truth or dare questions in a MySQL database
+// @host localhost:8080
+// @BasePath /api
 package main
 
 import (
@@ -7,7 +13,9 @@ import (
 	"net/http"
 	"os"
 
+	_ "github.com/2Friendly4You/TruthOrDare/docs" // Generated swagger docs
 	"github.com/joho/godotenv"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // Question represents a truth or dare question with its associated metadata.
@@ -47,29 +55,18 @@ func initializeDatabase() {
 	log.Println("Connected to the database.")
 }
 
-// getQuestions handles GET requests to /api/questions endpoint.
-//
-// Supported query parameters:
-//   - language: Filter by language code (optional)
-//   - type: Filter by "truth" or "dare" (optional)
-//   - tags: Multiple tag filters (optional)
-//   - matchAllTags: "true" to match all tags, "false" to match any (optional)
-//
-// Examples:
-//
-//	GET /api/questions?language=en
-//	GET /api/questions?type=dare&tags=18+&tags=alcohol&matchAllTags=true
-//
-// With curl:
-//
-//	curl -X GET "http://localhost:<port>/api/questions?language=en&type=truth&tags=18%2B&tags=alcohol&matchAllTags=true"
-//	curl -X GET "http://localhost:<port>/api/questions?language=de&type=dare&tags=18%2B&tags=food"
-//	curl -X GET "http://localhost:<port>/api/questions?language=en"
-//
-// Response:
-//
-//	200 OK: JSON array of Question objects
-//	500 Internal Server Error: If database query fails
+// @Summary Get questions
+// @Description Retrieve questions with optional filters
+// @Tags questions
+// @Accept json
+// @Produce json
+// @Param language query string false "Filter by ISO language code (e.g., en, de)"
+// @Param type query string false "Filter by question type (truth/dare)"
+// @Param tags query []string false "Filter by multiple tags"
+// @Param matchAllTags query boolean false "If true, all specified tags must match"
+// @Success 200 {array} Question
+// @Failure 500 {object} map[string]string
+// @Router /questions [get]
 func getQuestions(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
 	qType := r.URL.Query().Get("type")
@@ -95,20 +92,14 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getTags handles GET requests to /api/tags endpoint.
-//
-// Example:
-//
-//	Get /api/tags
-//
-// With curl:
-//
-//	curl -X GET "http://localhost:<port>/api/tags"
-//
-// Response:
-//
-//	200 OK: JSON array of tag names
-//	500 Internal Server Error: If database query fails
+// @Summary Get all tags
+// @Description Retrieve all available tags
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Success 200 {array} string
+// @Failure 500 {object} map[string]string
+// @Router /tags [get]
 func getTags(w http.ResponseWriter, r *http.Request) {
 	tags, err := db.GetTags()
 	if err != nil {
@@ -136,6 +127,9 @@ func main() {
 	initializeDatabase()
 	defer db.Close()
 
+	// Swagger documentation endpoint
+	http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+
 	http.HandleFunc("/api/questions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			getQuestions(w, r)
@@ -154,5 +148,6 @@ func main() {
 
 	port := os.Getenv("APP_PORT")
 	log.Printf("API server running on port %s", port)
+	log.Printf("Swagger documentation available at http://localhost:%s/swagger/index.html", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -39,6 +39,12 @@ docker-compose down -v
 2. Add players and start the game.
 3. Use the buttons to select "Truth" or "Dare" and follow the prompts.
 
+## Documentation
+1. Generate Swagger docs manually:
+    ```sh
+    make docs
+    ```
+
 ## Contributing
 - Fork the repository
 - Create a new branch

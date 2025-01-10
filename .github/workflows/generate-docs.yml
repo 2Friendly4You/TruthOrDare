@@ -1,11 +1,11 @@
-name: Generate Go Documentation
+name: Generate Swagger Documentation
 
 on:
   push:
     branches:
       - main
     paths-ignore:
-      - 'doc/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -25,19 +25,19 @@ jobs:
       with:
         go-version: 1.23.4
 
-    - name: Install gomarkdoc
-      run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+    - name: Install Swagger
+      run: go install github.com/swaggo/swag/cmd/swag@latest
 
-    - name: Create doc directory
-      run: mkdir -p doc
+    - name: Create docs directory
+      run: mkdir -p docs
 
-    - name: Generate documentation
-      run: gomarkdoc -o doc/readme.md
+    - name: Generate Swagger documentation
+      run: swag init
 
     - name: Check for changes
       id: git-check
       run: |
-        git add doc/
+        git add docs/
         git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
 
     - name: Setup branch and commit
@@ -45,9 +45,9 @@ jobs:
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
-        branch_name="docs/update-${{ github.run_id }}"
+        branch_name="docs/swagger-update-${{ github.run_id }}"
         git checkout -b $branch_name
-        git commit -m "docs: Update Go documentation"
+        git commit -m "docs: Update Swagger documentation"
         git push origin $branch_name
 
     - name: Create Pull Request
@@ -55,9 +55,9 @@ jobs:
       run: |
         gh pr create \
           --base main \
-          --head "docs/update-${{ github.run_id }}" \
-          --title "docs: Update Go documentation" \
-          --body "Auto-generated documentation update" \
+          --head "docs/swagger-update-${{ github.run_id }}" \
+          --title "docs: Update Swagger documentation" \
+          --body "Auto-generated Swagger documentation update" \
           --label "documentation"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

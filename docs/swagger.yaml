@@ -1,0 +1,96 @@
+basePath: /api
+definitions:
+  main.Question:
+    properties:
+      id:
+        description: ID is the unique identifier for the question
+        type: integer
+      language:
+        description: Language is the ISO language code (e.g., "en", "de")
+        type: string
+      tags:
+        description: Tags is an array of associated tag names
+        items:
+          type: string
+        type: array
+      task:
+        description: Task contains the actual question or dare text
+        type: string
+      type:
+        description: Type must be either "truth" or "dare"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A REST API for managing truth or dare questions in a MySQL database
+  title: Truth or Dare API
+  version: "1.0"
+paths:
+  /questions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve questions with optional filters
+      parameters:
+      - description: Filter by ISO language code (e.g., en, de)
+        in: query
+        name: language
+        type: string
+      - description: Filter by question type (truth/dare)
+        in: query
+        name: type
+        type: string
+      - collectionFormat: csv
+        description: Filter by multiple tags
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      - description: If true, all specified tags must match
+        in: query
+        name: matchAllTags
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Question'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get questions
+      tags:
+      - questions
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all available tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all tags
+      tags:
+      - tags
+swagger: "2.0"

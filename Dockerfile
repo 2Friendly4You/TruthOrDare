@@ -10,8 +10,14 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
+# Install swag
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Copy the source code
 COPY . .
+
+# Generate swagger documentation
+RUN swag init
 
 # Build the Go application
 RUN go build -o main .

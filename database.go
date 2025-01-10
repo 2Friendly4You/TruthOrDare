@@ -74,10 +74,10 @@ func NewDatabase() (*Database, error) {
 
 // GetQuestions retrieves filtered questions from the database
 // @Description Fetches questions based on language, type, and tags
-// @Param language string ISO language code filter (e.g., "en", "de")
-// @Param qType string Question type filter ("truth" or "dare")
-// @Param tags []string Tag names to filter by
-// @Param config *QueryConfig Query configuration options
+// @Param language string false "ISO language code filter (e.g., 'en', 'de')"
+// @Param qType string false "Question type filter ('truth' or 'dare')"
+// @Param tags []string false "Tag names to filter by"
+// @Param config QueryConfig false "Query configuration options"
 // @Return []Question List of matching questions
 // @Return error Query execution error
 // @Example

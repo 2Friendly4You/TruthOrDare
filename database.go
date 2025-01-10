@@ -29,11 +29,19 @@ type QueryConfig struct {
 // @Description Establishes database connection with retry mechanism
 // @Return (*Database) Database connection instance
 // @Return (error) Connection error if all attempts fail
-// @x-envVars MYSQL_USER - Database username
-// @x-envVars MYSQL_PASSWORD - Database password
-// @x-envVars MYSQL_HOST - Database host address
-// @x-envVars MYSQL_PORT - Database port number
-// @x-envVars MYSQL_DATABASE - Database name
+// @Extensions
+//
+//	x-envVars:
+//	  - name: MYSQL_USER
+//	    description: Database username
+//	  - name: MYSQL_PASSWORD
+//	    description: Database password
+//	  - name: MYSQL_HOST
+//	    description: Database host address
+//	  - name: MYSQL_PORT
+//	    description: Database port number
+//	  - name: MYSQL_DATABASE
+//	    description: Database name
 func NewDatabase() (*Database, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		os.Getenv("MYSQL_USER"),

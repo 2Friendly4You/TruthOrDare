@@ -190,16 +190,13 @@ func (d *Database) GetTags() ([]string, error) {
 
 // AddQuestion inserts a new question with associated tags
 // @Description Creates a new question and its tag associations in a transaction
-// @Param q Question Question object containing all required fields
-// @Return error Operation error if transaction fails
-// @Example
-//
-//	err := db.AddQuestion(Question{
-//	    Language: "en",
-//	    Type:    "truth",
-//	    Task:    "What's your biggest fear?",
-//	    Tags:    []string{"deep", "emotional"},
-//	})
+// @Accept json
+// @Produce json
+// @Param q body Question true "Question object to be created"
+// @Success 201 {object} Question "Successfully created question"
+// @Failure 400 {object} ErrorResponse "Invalid question data"
+// @Failure 500 {object} ErrorResponse "Database error"
+// @Router /questions [post]
 func (d *Database) AddQuestion(q Question) error {
 	tx, err := d.db.Begin()
 	if err != nil {

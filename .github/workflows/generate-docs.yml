@@ -18,6 +18,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Set branch name
+      run: echo "BRANCH_NAME=docs/update-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:

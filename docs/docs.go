@@ -9,7 +9,13 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "API Support",
+            "url": "https://github.com/2Friendly4You/TruthOrDare"
+        },
+        "license": {
+            "name": "MIT"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -17,7 +23,7 @@ const docTemplate = `{
     "paths": {
         "/questions": {
             "get": {
-                "description": "Retrieve questions with optional filters",
+                "description": "Get a list of truth or dare questions with optional filtering capabilities",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,17 +33,22 @@ const docTemplate = `{
                 "tags": [
                     "questions"
                 ],
-                "summary": "Get questions",
+                "summary": "Retrieve questions",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by ISO language code (e.g., en, de)",
+                        "example": "en",
+                        "description": "ISO 639-1 language code filter (2 characters)",
                         "name": "language",
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "truth",
+                            "dare"
+                        ],
                         "type": "string",
-                        "description": "Filter by question type (truth/dare)",
+                        "description": "Question type filter",
                         "name": "type",
                         "in": "query"
                     },
@@ -47,20 +58,22 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "Filter by multiple tags",
+                        "example": "funny,party,social",
+                        "description": "Filter questions by tags (comma-separated)",
                         "name": "tags",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "If true, all specified tags must match",
+                        "default": false,
+                        "description": "Require all specified tags to match (true) or any tag (false)",
                         "name": "matchAllTags",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of matching questions",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -68,13 +81,56 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Invalid request parameters",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new question and its tag associations in a transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "description": "Question object to be created",
+                        "name": "q",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Question"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created question",
+                        "schema": {
+                            "$ref": "#/definitions/main.Question"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid question data",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -82,7 +138,7 @@ const docTemplate = `{
         },
         "/tags": {
             "get": {
-                "description": "Retrieve all available tags",
+                "description": "Retrieve a list of all available tags that can be used for question filtering",
                 "consumes": [
                     "application/json"
                 ],
@@ -92,10 +148,10 @@ const docTemplate = `{
                 "tags": [
                     "tags"
                 ],
-                "summary": "Get all tags",
+                "summary": "Get available tags",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of available tags",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -104,12 +160,9 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -117,30 +170,45 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "main.ErrorResponse": {
+            "description": "Standard error response format",
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Optional error code for client handling",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Error message describing what went wrong",
+                    "type": "string"
+                }
+            }
+        },
         "main.Question": {
+            "description": "A truth or dare question entry with metadata",
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "ID is the unique identifier for the question",
+                    "description": "Unique identifier for the question\n@example 1",
                     "type": "integer"
                 },
                 "language": {
-                    "description": "Language is the ISO language code (e.g., \"en\", \"de\")",
+                    "description": "ISO language code of the question\n@example \"en\"\n@pattern ^[a-z]{2}$",
                     "type": "string"
                 },
                 "tags": {
-                    "description": "Tags is an array of associated tag names",
+                    "description": "Array of associated tag names\n@example [\"funny\",\"social\",\"party\"]",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "task": {
-                    "description": "Task contains the actual question or dare text",
+                    "description": "The actual question or dare text\n@example \"What was your most embarrassing moment?\"\n@minLength 3",
                     "type": "string"
                 },
                 "type": {
-                    "description": "Type must be either \"truth\" or \"dare\"",
+                    "description": "Question type, either \"truth\" or \"dare\"\n@example \"truth\"\n@enum \"truth\" \"dare\"",
                     "type": "string"
                 }
             }
@@ -153,9 +221,9 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api",
-	Schemes:          []string{},
+	Schemes:          []string{"http"},
 	Title:            "Truth or Dare API",
-	Description:      "A REST API for managing truth or dare questions in a MySQL database",
+	Description:      "A truth or dare question entry with metadata",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

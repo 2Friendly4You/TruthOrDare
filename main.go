@@ -170,6 +170,11 @@ func main() {
 		}
 	})
 
+	// redirect /api to /swagger
+	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/index.html", http.StatusSeeOther)
+	})
+
 	port := os.Getenv("APP_PORT")
 	log.Printf("API server running on port %s", port)
 	log.Printf("Swagger documentation available at http://localhost:%s/swagger/index.html", port)

@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'doc/**'
   workflow_dispatch:
 
 permissions:
@@ -18,9 +20,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set branch name
-      run: echo "BRANCH_NAME=docs/update-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
-
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -32,18 +31,23 @@ jobs:
     - name: Create doc directory
       run: mkdir -p doc
 
-    - name: Create documentation branch
-      run: git checkout -b ${{ env.BRANCH_NAME }}
-
     - name: Generate documentation
       run: gomarkdoc -o doc/readme.md
 
+    - name: Check for changes
+      id: git-check
+      run: |
+        git add doc/
+        git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+
     - name: Create Pull Request
+      if: steps.git-check.outputs.changed == 'true'
       uses: peter-evans/create-pull-request@v5
       with:
         title: 'docs: Update Go documentation'
+        commit-message: 'docs: Update Go documentation'
         body: 'Auto-generated documentation update'
-        branch: ${{ env.BRANCH_NAME }}
+        branch: docs/update-${{ github.run_id }}
         base: main
         delete-branch: true
         labels: documentation

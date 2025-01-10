@@ -1,4 +1,4 @@
-// Package main provides a REST API server for managing truth or dare questions.
+// Package main provides a REST API server for managing truth or dare questions. The server connects to a mysql database.
 package main
 
 import (

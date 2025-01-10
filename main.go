@@ -95,9 +95,39 @@ func getQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getTags handles GET requests to /api/tags endpoint.
+//
+// Example:
+//
+//	Get /api/tags
+//
+// With curl:
+//
+//	curl -X GET "http://localhost:<port>/api/tags"
+//
+// Response:
+//
+//	200 OK: JSON array of tag names
+//	500 Internal Server Error: If database query fails
+func getTags(w http.ResponseWriter, r *http.Request) {
+	tags, err := db.GetTags()
+	if err != nil {
+		log.Printf("Failed to fetch tags: %v", err)
+		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(tags); err != nil {
+		log.Printf("Failed to encode tags to JSON: %v", err)
+		http.Error(w, "Failed to encode tags to JSON", http.StatusInternalServerError)
+	}
+}
+
 // main initializes and starts the HTTP server.
 // The server provides the following endpoints:
 //   - GET /api/questions: Retrieve questions with optional filters
+//   - GET /api/tags: Retrieve all available tags
 //
 // Required environment variables:
 //   - APP_PORT: Port number for the HTTP server
@@ -109,6 +139,14 @@ func main() {
 	http.HandleFunc("/api/questions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			getQuestions(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/api/tags", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			getTags(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

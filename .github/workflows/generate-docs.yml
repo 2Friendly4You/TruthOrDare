@@ -19,22 +19,19 @@ jobs:
       with:
         go-version: 1.23.4
 
-    - name: Install godoc
-      run: go install golang.org/x/tools/cmd/godoc@latest
+    - name: Install gomarkdoc
+      run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
-    - name: Create docs directory
-      run: mkdir -p docs
+    - name: Create doc directory
+      run: mkdir -p doc
 
     - name: Generate documentation
-      run: |
-        nohup godoc -http=:6060 &
-        sleep 5
-        wget -r -np -nH --cut-dirs=1 -P docs/ http://localhost:6060
+      run: gomarkdoc -dir . -o doc
 
     - name: Commit and push documentation
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git add docs/
+        git add README.md
         git commit -m "Update Go documentation [skip ci]" || echo "No changes to commit"
         git push
